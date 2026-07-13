@@ -1,0 +1,19 @@
+[workspace]
+resolver = "2"
+members = ["crates/*"]
+
+# Shared metadata, inherited by every crate via `<field>.workspace = true`.
+# Single source of truth per workspace-layout.md §4.
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.85"
+repository = "https://github.com/ismailmo/repo-intelligence"
+
+# Shared external dependency versions, pinned once here. Declared centrally to
+# document intent and avoid version drift; crates do NOT consume these until the
+# phase that needs them (phase-0-implementation-plan.md §7).
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
