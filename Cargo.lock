@@ -10,5 +10,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "repo-intelligence-detectors"
+version = "0.0.0"
+dependencies = [
+ "repo-intelligence-core",
+ "repo-intelligence-json",
+]
+
+[[package]]
 name = "repo-intelligence-json"
 version = "0.0.0"

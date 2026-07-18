@@ -1,0 +1,11 @@
+[package]
+name = "repo-intelligence-detectors"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+
+[dependencies]
+repo-intelligence-core = { path = "../core" }
+repo-intelligence-json = { path = "../json" }
