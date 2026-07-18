@@ -1,0 +1,16 @@
+[package]
+name = "repo-intelligence-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "repo-intelligence"
+path = "src/main.rs"
+
+[dependencies]
+repo-intelligence-core = { path = "../core" }
+repo-intelligence-detectors = { path = "../detectors" }
+repo-intelligence-json = { path = "../json" }
