@@ -28,3 +28,6 @@ jobs:
 
       - name: test
         run: cargo test --workspace
+
+      - name: dependency-graph guard
+        run: ./scripts/check-engine-deps.sh
