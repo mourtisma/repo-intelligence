@@ -23,3 +23,6 @@ pub use confidence::Confidence;
 
 mod diagnostic;
 pub use diagnostic::{Diagnostic, Severity};
+
+mod finding;
+pub use finding::{DetectorCategory, Finding, Provenance};
