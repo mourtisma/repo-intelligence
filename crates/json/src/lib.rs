@@ -17,3 +17,6 @@
 //! external consumers (Skills, third parties) can safely pin to schema v0.x.
 
 pub const SCHEMA_VERSION: &str = "0.1.0";
+
+mod confidence;
+pub use confidence::Confidence;
