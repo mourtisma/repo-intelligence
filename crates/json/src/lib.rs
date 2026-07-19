@@ -15,6 +15,16 @@
 //! During `0.x` (pre-1.0), we adopt the discipline above rather than relying on
 //! semver's technical permission for breaking changes in minors. This ensures
 //! external consumers (Skills, third parties) can safely pin to schema v0.x.
+//!
+//! # The Report envelope
+//!
+//! The top-level `Report` type carries analysis findings and diagnostics.
+//! **Important:** the `json` crate defines the shape but does NOT populate:
+//! - `tool_version`: injected by the CLI at runtime (the engine/CLI release version)
+//! - `analyzed_at`: injected by the CLI at runtime (RFC 3339 timestamp of analysis)
+//!
+//! The `json` crate only serializes these fields as strings; runtime injection
+//! is the CLI's responsibility to ensure reproducibility and accuracy.
 
 pub const SCHEMA_VERSION: &str = "0.1.0";
 
@@ -26,3 +36,6 @@ pub use diagnostic::{Diagnostic, Severity};
 
 mod finding;
 pub use finding::{DetectorCategory, Finding, Provenance};
+
+mod report;
+pub use report::Report;
