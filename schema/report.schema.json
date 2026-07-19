@@ -1,0 +1,241 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Report",
+  "description": "The report envelope: the complete analysis output carrying facts and diagnostics.\n\nFive fields, exactly in this order (order is part of the byte-stable contract): 1. `schema_version` — the contract version (serialized from SCHEMA_VERSION constant) 2. `tool_version` — the CLI/engine release (injected by the CLI at runtime) 3. `analyzed_at` — RFC 3339 timestamp (injected by the CLI at runtime, excluded from determinism tests) 4. `findings` — the facts discovered during analysis 5. `diagnostics` — records of what analysis couldn't determine\n\nBoth `findings` and `diagnostics` are always present as arrays (never null, never omitted), expressing the contract's invariant shape: an empty-detector run still produces a well-formed report.",
+  "type": "object",
+  "required": [
+    "analyzed_at",
+    "diagnostics",
+    "findings",
+    "schema_version",
+    "tool_version"
+  ],
+  "properties": {
+    "schema_version": {
+      "description": "Schema version (e.g. `\"0.1.0\"`), serialized from `SCHEMA_VERSION`. Used by consumers to enforce compatibility bounds.",
+      "type": "string"
+    },
+    "tool_version": {
+      "description": "Tool version: the CLI/engine release that produced this report. **Not populated by the `json` crate.** Injected by the CLI at runtime. Many tool versions may share one schema version.",
+      "type": "string"
+    },
+    "analyzed_at": {
+      "description": "RFC 3339 timestamp when analysis completed. **Not populated by the `json` crate.** Injected by the CLI at runtime. String (not a chrono type) to keep the `json` crate free of time dependencies and to keep the contract format-explicit. Excluded from determinism tests (analysis output may vary by timestamp).",
+      "type": "string"
+    },
+    "findings": {
+      "description": "The facts discovered during analysis. Empty array is valid — an empty-detector run still produces a well-formed report.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Finding"
+      }
+    },
+    "diagnostics": {
+      "description": "Records of what the analysis couldn't determine (errors, warnings). Empty array is valid. Never null or omitted.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Diagnostic"
+      }
+    }
+  },
+  "definitions": {
+    "Finding": {
+      "description": "A Finding: one structured fact with provenance and confidence. The `data` field is an open JSON object for per-kind payloads, allowing detectors to grow schema additively without editing the contract.",
+      "type": "object",
+      "required": [
+        "category",
+        "confidence",
+        "data",
+        "kind",
+        "provenance"
+      ],
+      "properties": {
+        "category": {
+          "description": "Which category of question this finding answers.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/DetectorCategory"
+            }
+          ]
+        },
+        "kind": {
+          "description": "The specific fact type within the category (e.g. \"cargo-toml\"). A string, not an enum — the load-bearing extensibility choice.",
+          "type": "string"
+        },
+        "path": {
+          "description": "Repo-relative path this fact is anchored to (forward-slash normalized). `None` for genuinely repo-global facts.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "confidence": {
+          "description": "Confidence in this finding.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Confidence"
+            }
+          ]
+        },
+        "data": {
+          "description": "The typed-per-kind payload as an open JSON object. v0 enforces it is always a JSON object (never a bare scalar or array)."
+        },
+        "provenance": {
+          "description": "Which detector produced this, and from which files.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Provenance"
+            }
+          ]
+        }
+      }
+    },
+    "DetectorCategory": {
+      "description": "The six stable detector categories from the architecture. Serialized as kebab-case strings for human-legible, language-neutral JSON.",
+      "oneOf": [
+        {
+          "description": "Repository structure and metadata.",
+          "type": "string",
+          "enum": [
+            "structure"
+          ]
+        },
+        {
+          "description": "Programming languages present.",
+          "type": "string",
+          "enum": [
+            "language"
+          ]
+        },
+        {
+          "description": "Package managers, dependencies, ecosystems.",
+          "type": "string",
+          "enum": [
+            "ecosystem"
+          ]
+        },
+        {
+          "description": "Version sources: tags, branches, manifest versions.",
+          "type": "string",
+          "enum": [
+            "version-source"
+          ]
+        },
+        {
+          "description": "CI/CD systems and configurations.",
+          "type": "string",
+          "enum": [
+            "ci"
+          ]
+        },
+        {
+          "description": "Release tooling and automation.",
+          "type": "string",
+          "enum": [
+            "release-tooling"
+          ]
+        }
+      ]
+    },
+    "Confidence": {
+      "description": "Confidence level of a finding. A small closed enum: exactly three levels. Variant order is meaningful: `Low` < `Medium` < `High` (derives `Ord`). Serialized as lowercase strings to ensure determinism and stability.",
+      "oneOf": [
+        {
+          "description": "Low confidence: the finding may be correct but has significant uncertainty.",
+          "type": "string",
+          "enum": [
+            "low"
+          ]
+        },
+        {
+          "description": "Medium confidence: the finding is likely correct but uncertain.",
+          "type": "string",
+          "enum": [
+            "medium"
+          ]
+        },
+        {
+          "description": "High confidence: the finding is almost certainly correct.",
+          "type": "string",
+          "enum": [
+            "high"
+          ]
+        }
+      ]
+    },
+    "Provenance": {
+      "description": "Provenance: which detector produced a finding and from which sources. Makes facts traceable to bytes on disk.",
+      "type": "object",
+      "required": [
+        "detector",
+        "sources"
+      ],
+      "properties": {
+        "detector": {
+          "description": "The detector's stable id.",
+          "type": "string"
+        },
+        "sources": {
+          "description": "Repo-relative, slash-normalized paths the fact was derived from. May be empty for synthesized facts (Phase 2+).",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "Diagnostic": {
+      "description": "A diagnostic: a record of something the analysis couldn't determine. Diagnostics capture the \"why couldn't you find that?\" context.",
+      "type": "object",
+      "required": [
+        "detector",
+        "message",
+        "severity"
+      ],
+      "properties": {
+        "severity": {
+          "description": "Severity of the diagnostic.",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Severity"
+            }
+          ]
+        },
+        "message": {
+          "description": "Human-readable message explaining what couldn't be determined.",
+          "type": "string"
+        },
+        "detector": {
+          "description": "Which detector produced this diagnostic (stable id).",
+          "type": "string"
+        },
+        "path": {
+          "description": "Optional path this diagnostic is anchored to (repo-relative, forward-slash normalized). Always emitted (as `null` if absent) to maintain invariant report shape.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Severity": {
+      "description": "Severity level of a diagnostic message.",
+      "oneOf": [
+        {
+          "description": "An error that prevented analysis.",
+          "type": "string",
+          "enum": [
+            "error"
+          ]
+        },
+        {
+          "description": "A warning that analysis continued despite an issue.",
+          "type": "string",
+          "enum": [
+            "warning"
+          ]
+        }
+      ]
+    }
+  }
+}

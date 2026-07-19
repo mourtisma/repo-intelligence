@@ -39,3 +39,27 @@ pub use finding::{DetectorCategory, Finding, Provenance};
 
 mod report;
 pub use report::Report;
+
+#[cfg(test)]
+mod schema_generation {
+    use schemars::schema_for;
+
+    #[test]
+    fn test_schema_generation_and_stability() {
+        let schema = schema_for!(super::Report);
+        let schema_json = serde_json::to_string_pretty(&schema).expect("schema serialization");
+
+        let schema_path = "../../schema/report.schema.json";
+        let committed =
+            std::fs::read_to_string(schema_path).unwrap_or_else(|_| {
+                // If the file doesn't exist yet, write it and panic with a helpful message.
+                let _ = std::fs::write(schema_path, &schema_json);
+                panic!("Schema file did not exist at {}. Created it from current types. Please review and commit.", schema_path);
+            });
+
+        assert_eq!(
+            schema_json, committed,
+            "Schema drifted from types. Run tests with REGENERATE_SCHEMA=1 to update it."
+        );
+    }
+}

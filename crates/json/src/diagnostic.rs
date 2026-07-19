@@ -2,9 +2,10 @@
 //! for transparency and debugging.
 
 use serde::{Deserialize, Serialize};
+use schemars::JsonSchema;
 
 /// Severity level of a diagnostic message.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum Severity {
     /// An error that prevented analysis.
@@ -15,7 +16,7 @@ pub enum Severity {
 
 /// A diagnostic: a record of something the analysis couldn't determine.
 /// Diagnostics capture the "why couldn't you find that?" context.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Diagnostic {
     /// Severity of the diagnostic.
     pub severity: Severity,

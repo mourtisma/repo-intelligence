@@ -1,6 +1,7 @@
 //! Report envelope: the top-level contract type carrying findings and diagnostics.
 
 use serde::{Deserialize, Serialize};
+use schemars::JsonSchema;
 
 use crate::{Diagnostic, Finding};
 
@@ -15,7 +16,7 @@ use crate::{Diagnostic, Finding};
 ///
 /// Both `findings` and `diagnostics` are always present as arrays (never null, never omitted),
 /// expressing the contract's invariant shape: an empty-detector run still produces a well-formed report.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Report {
     /// Schema version (e.g. `"0.1.0"`), serialized from `SCHEMA_VERSION`.
     /// Used by consumers to enforce compatibility bounds.

@@ -17,4 +17,5 @@ repository = "https://github.com/ismailmo/repo-intelligence"
 [workspace.dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
+schemars = { version = "0.8", features = ["preserve_order"] }
 clap = { version = "4", features = ["derive"] }

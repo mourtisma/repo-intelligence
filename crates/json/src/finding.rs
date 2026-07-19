@@ -2,12 +2,13 @@
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use schemars::JsonSchema;
 
 use crate::Confidence;
 
 /// The six stable detector categories from the architecture.
 /// Serialized as kebab-case strings for human-legible, language-neutral JSON.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum DetectorCategory {
     /// Repository structure and metadata.
@@ -28,7 +29,7 @@ pub enum DetectorCategory {
 
 /// Provenance: which detector produced a finding and from which sources.
 /// Makes facts traceable to bytes on disk.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Provenance {
     /// The detector's stable id.
     pub detector: String,
@@ -40,7 +41,7 @@ pub struct Provenance {
 /// A Finding: one structured fact with provenance and confidence.
 /// The `data` field is an open JSON object for per-kind payloads,
 /// allowing detectors to grow schema additively without editing the contract.
-#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
 pub struct Finding {
     /// Which category of question this finding answers.
     pub category: DetectorCategory,

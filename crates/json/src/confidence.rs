@@ -2,11 +2,12 @@
 //! in a finding, deterministic and stable across versions.
 
 use serde::{Deserialize, Serialize};
+use schemars::JsonSchema;
 
 /// Confidence level of a finding. A small closed enum: exactly three levels.
 /// Variant order is meaningful: `Low` < `Medium` < `High` (derives `Ord`).
 /// Serialized as lowercase strings to ensure determinism and stability.
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum Confidence {
     /// Low confidence: the finding may be correct but has significant uncertainty.
