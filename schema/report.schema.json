@@ -78,7 +78,8 @@
           ]
         },
         "data": {
-          "description": "The typed-per-kind payload as an open JSON object. v0 enforces it is always a JSON object (never a bare scalar or array)."
+          "description": "The typed-per-kind payload as an open JSON object. v0 enforces it is always a JSON object (never a bare scalar or array). Per-kind payload shapes are tightened in Phase 5/6.",
+          "type": "object"
         },
         "provenance": {
           "description": "Which detector produced this, and from which files.",

@@ -44,22 +44,38 @@ pub use report::Report;
 mod schema_generation {
     use schemars::schema_for;
 
+    const SCHEMA_PATH: &str = "../../schema/report.schema.json";
+
+    fn generated_schema_json() -> String {
+        let schema = schema_for!(super::Report);
+        serde_json::to_string_pretty(&schema).expect("schema serialization")
+    }
+
+    /// Asserts the committed schema matches what the types currently generate.
+    /// Does not write anything — a stale or missing file is a test failure.
     #[test]
     fn test_schema_generation_and_stability() {
-        let schema = schema_for!(super::Report);
-        let schema_json = serde_json::to_string_pretty(&schema).expect("schema serialization");
+        let schema_json = generated_schema_json();
 
-        let schema_path = "../../schema/report.schema.json";
-        let committed =
-            std::fs::read_to_string(schema_path).unwrap_or_else(|_| {
-                // If the file doesn't exist yet, write it and panic with a helpful message.
-                let _ = std::fs::write(schema_path, &schema_json);
-                panic!("Schema file did not exist at {}. Created it from current types. Please review and commit.", schema_path);
-            });
+        let committed = std::fs::read_to_string(SCHEMA_PATH).unwrap_or_else(|_| {
+            panic!(
+                "Schema file did not exist at {}. Regenerate with: cargo test -p repo-intelligence-json regenerate_schema -- --ignored",
+                SCHEMA_PATH
+            )
+        });
 
         assert_eq!(
             schema_json, committed,
-            "Schema drifted from types. Run tests with REGENERATE_SCHEMA=1 to update it."
+            "Schema drifted from types. Regenerate with: cargo test -p repo-intelligence-json regenerate_schema -- --ignored"
         );
+    }
+
+    /// Not run by default (`cargo test`). Explicitly writes the regenerated
+    /// schema to disk for review before committing:
+    /// `cargo test -p repo-intelligence-json regenerate_schema -- --ignored`
+    #[test]
+    #[ignore]
+    fn regenerate_schema() {
+        std::fs::write(SCHEMA_PATH, generated_schema_json()).expect("write schema file");
     }
 }

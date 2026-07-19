@@ -85,11 +85,17 @@ report, plus the `SCHEMA_VERSION` constant.
 - Depends on: `serde`, `serde_json`, and a schema-emitting crate (e.g.
   `schemars`) to generate the language-neutral JSON Schema artifact into
   `schema/`.
-- Exposes: `Report`, `RepoStructure`, `Language`, `Ecosystem`, `VersionSource`,
-  `CiSystem`, `ReleaseTooling`, `Finding`, `Diagnostic`, `Confidence`, and the
-  envelope (`schema_version`, `tool_version`, `analyzed_at`). Exact shapes are
-  defined by the JSON contract (see `architecture.md` §6–8 and
-  `detector-architecture.md`).
+- Exposes: `Report` (the envelope: `schema_version`, `tool_version`,
+  `analyzed_at`, `findings`, `diagnostics`), `Finding`, `Diagnostic`,
+  `Confidence`, `DetectorCategory`, `Provenance`, and `Severity`. There are
+  **no** distinct top-level types for `RepoStructure`, `Language`,
+  `Ecosystem`, `VersionSource`, `CiSystem`, or `ReleaseTooling` — these are
+  represented as `Finding.category`/`kind` values (a closed `DetectorCategory`
+  enum plus an open `kind` string), not as separate envelope sections. This
+  reconciliation (a flat, path-anchored `findings` array over typed sections)
+  is decided and justified in `phase-1-implementation-plan.md` §4.2 and §9.
+  Exact shapes are defined by the JSON contract (see `architecture.md` §6–8
+  and `detector-architecture.md`).
 
 **Why a leaf crate with zero internal deps:** the contract is the most stable
 and most widely depended-upon artifact. Making it a leaf guarantees a Skill,

@@ -1,10 +1,30 @@
 //! Finding model: a structured fact discovered during analysis, with provenance and confidence.
 
+use schemars::schema::Schema;
+use schemars::{JsonSchema, SchemaGenerator};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use schemars::JsonSchema;
 
 use crate::Confidence;
+
+/// Schema override for Finding.data: constrains it to a JSON object
+/// (never scalar, array, or null at top level) per phase-1-implementation-plan §5.3.
+fn data_schema(_gen: &mut SchemaGenerator) -> Schema {
+    Schema::Object(schemars::schema::SchemaObject {
+        metadata: Some(Box::new(schemars::schema::Metadata {
+            description: Some(
+                "The typed-per-kind payload. v0 constrains this to a JSON object with \
+                 arbitrary keys; per-kind payload shapes are tightened in Phase 5/6."
+                    .to_string(),
+            ),
+            ..Default::default()
+        })),
+        instance_type: Some(schemars::schema::SingleOrVec::Single(Box::new(
+            schemars::schema::InstanceType::Object,
+        ))),
+        ..Default::default()
+    })
+}
 
 /// The six stable detector categories from the architecture.
 /// Serialized as kebab-case strings for human-legible, language-neutral JSON.
@@ -55,6 +75,8 @@ pub struct Finding {
     pub confidence: Confidence,
     /// The typed-per-kind payload as an open JSON object.
     /// v0 enforces it is always a JSON object (never a bare scalar or array).
+    /// Per-kind payload shapes are tightened in Phase 5/6.
+    #[schemars(schema_with = "data_schema")]
     pub data: Value,
     /// Which detector produced this, and from which files.
     pub provenance: Provenance,

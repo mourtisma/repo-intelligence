@@ -1,7 +1,7 @@
 //! Report envelope: the top-level contract type carrying findings and diagnostics.
 
-use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
 use crate::{Diagnostic, Finding};
 
@@ -67,8 +67,14 @@ mod tests {
         assert!(json.get("diagnostics").is_some());
 
         // Verify findings and diagnostics are always-present empty arrays, never null
-        assert_eq!(json.get("findings"), Some(&serde_json::Value::Array(vec![])));
-        assert_eq!(json.get("diagnostics"), Some(&serde_json::Value::Array(vec![])));
+        assert_eq!(
+            json.get("findings"),
+            Some(&serde_json::Value::Array(vec![]))
+        );
+        assert_eq!(
+            json.get("diagnostics"),
+            Some(&serde_json::Value::Array(vec![]))
+        );
     }
 
     #[test]

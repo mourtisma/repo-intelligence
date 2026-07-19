@@ -1,8 +1,8 @@
 //! Diagnostic model: records where the analysis couldn't determine a fact,
 //! for transparency and debugging.
 
-use serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
 /// Severity level of a diagnostic message.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize, JsonSchema)]
