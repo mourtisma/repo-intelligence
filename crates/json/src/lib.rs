@@ -20,3 +20,6 @@ pub const SCHEMA_VERSION: &str = "0.1.0";
 
 mod confidence;
 pub use confidence::Confidence;
+
+mod diagnostic;
+pub use diagnostic::{Diagnostic, Severity};
