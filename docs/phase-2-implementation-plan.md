@@ -1,8 +1,11 @@
 # Phase 2 — Implementation Plan
 
-> Status: Ready to implement. Scope is defined by `roadmap.md` Phase 2,
-> `architecture.md` §4–5, and `detector-architecture.md` §1–3, §5, §10. This plan
-> turns those into exact, ordered tasks.
+> Status: Implemented (commit `374d878`), and reviewed twice. Deviations are in
+> §12. Review items N1–N3 carry over to Phase 3, Task 3.0.
+>
+> Scope is defined by `roadmap.md` Phase 2, `architecture.md` §4–5, and
+> `detector-architecture.md` §1–3, §5, §10. This plan turns those into exact,
+> ordered tasks.
 >
 > Phase 2 delivers the **core pipeline + determinism**: `repo-intelligence-core`
 > can scan a repository into a read-only `RepoContext`, run a (still empty)
