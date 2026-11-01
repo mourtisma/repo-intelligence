@@ -42,7 +42,17 @@ fn gitignore_is_honored_and_only_dot_git_is_excluded() {
             "src/main.txt"
         ]
     );
-    assert!(ctx.diagnostics().is_empty());
+    // The fake `.git` is not a real repository, so git metadata is unreadable.
+    assert_eq!(ctx.git_tags(), None);
+    let messages: Vec<&str> = ctx
+        .diagnostics()
+        .iter()
+        .map(|d| d.message.as_str())
+        .collect();
+    assert_eq!(
+        messages,
+        vec!["git metadata unreadable; tags not collected"]
+    );
 }
 
 #[test]

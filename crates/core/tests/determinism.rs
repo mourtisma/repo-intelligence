@@ -36,10 +36,7 @@ impl Detector for Emitter {
         self.applies
     }
     fn detect(&self, _ctx: &RepoContext) -> DetectionOutput {
-        DetectionOutput {
-            findings: self.findings.clone(),
-            diagnostics: self.diagnostics.clone(),
-        }
+        DetectionOutput::new(self.findings.clone(), self.diagnostics.clone())
     }
 }
 
@@ -291,4 +288,114 @@ fn same_tree_in_different_directories_is_byte_identical() {
         let locked = dir.path().join("locked");
         std::fs::set_permissions(&locked, std::fs::Permissions::from_mode(0o755)).unwrap();
     }
+}
+
+#[test]
+fn findings_with_non_repo_relative_paths_are_rejected() {
+    let ctx = scan(&fixture("nested")).unwrap();
+    let bad = ["/abs", "\\abs", "C:/x", "a/../b", "./a", "a//b", "a/", ""];
+    let mut findings: Vec<Finding> = bad
+        .iter()
+        .map(|p| finding(Some(p), "k", "a", json!({})))
+        .collect();
+    // Allowed: `..` inside a name, a backslash inside a name, and an
+    // unrelated repo-relative path.
+    findings.push(finding(Some("a..b.txt"), "k", "a", json!({})));
+    findings.push(finding(Some("dir\\name.txt"), "k", "a", json!({})));
+    findings.push(finding(Some("ok.txt"), "k", "a", json!({})));
+
+    let mut registry = DetectorRegistry::new();
+    registry.register(Emitter {
+        id: "a",
+        applies: true,
+        findings,
+        diagnostics: vec![],
+    });
+    let report = run(&ctx, &registry);
+
+    let kept: Vec<Option<&str>> = report.findings.iter().map(|f| f.path.as_deref()).collect();
+    assert_eq!(
+        kept,
+        vec![Some("a..b.txt"), Some("dir\\name.txt"), Some("ok.txt")]
+    );
+    assert_eq!(report.diagnostics.len(), bad.len());
+    assert!(report
+        .diagnostics
+        .iter()
+        .all(|d| d.severity == Severity::Error && d.detector == "a"));
+}
+
+#[test]
+fn source_paths_are_validated_too() {
+    let ctx = scan(&fixture("nested")).unwrap();
+    let mut f = finding(Some("a.txt"), "k", "a", json!({}));
+    f.provenance.sources = vec!["/etc/passwd".to_string()];
+    let mut registry = DetectorRegistry::new();
+    registry.register(Emitter {
+        id: "a",
+        applies: true,
+        findings: vec![f],
+        diagnostics: vec![],
+    });
+    let report = run(&ctx, &registry);
+    assert!(report.findings.is_empty());
+    assert_eq!(report.diagnostics.len(), 1);
+}
+
+#[test]
+fn contains_matches_listed_paths_exactly() {
+    let ctx = scan(&fixture("nested")).unwrap();
+    assert!(ctx.contains("a/z.txt"));
+    assert!(!ctx.contains("a/z"));
+    assert!(!ctx.contains("missing.txt"));
+}
+
+#[test]
+#[should_panic(expected = "duplicate detector id")]
+fn duplicate_detector_ids_panic_at_registration() {
+    let mut registry = DetectorRegistry::new();
+    let make = || Emitter {
+        id: "dup",
+        applies: true,
+        findings: vec![],
+        diagnostics: vec![],
+    };
+    registry.register(make());
+    registry.register(make());
+}
+
+#[test]
+fn detector_diagnostics_with_non_repo_relative_paths_are_replaced() {
+    let ctx = scan(&fixture("nested")).unwrap();
+    let mut registry = DetectorRegistry::new();
+    registry.register(Emitter {
+        id: "a",
+        applies: true,
+        findings: vec![],
+        diagnostics: vec![
+            diag(
+                Some("/home/user/repo/x.toml"),
+                "a",
+                "leaks an absolute path",
+            ),
+            diag(Some("ok/x.toml"), "a", "fine"),
+        ],
+    });
+    let report = run(&ctx, &registry);
+    let got: Vec<(Severity, Option<&str>, &str)> = report
+        .diagnostics
+        .iter()
+        .map(|d| (d.severity, d.path.as_deref(), d.message.as_str()))
+        .collect();
+    assert_eq!(
+        got,
+        vec![
+            (Severity::Warning, Some("ok/x.toml"), "fine"),
+            (
+                Severity::Error,
+                None,
+                "diagnostic rejected: path is not repo-relative"
+            ),
+        ]
+    );
 }

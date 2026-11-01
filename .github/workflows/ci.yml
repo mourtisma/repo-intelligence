@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history and tags, so the git-tag path runs in CI
 
       - uses: dtolnay/rust-toolchain@master
         with:
@@ -31,3 +33,15 @@ jobs:
 
       - name: dependency-graph guard
         run: ./scripts/check-engine-deps.sh
+
+      - name: self-analysis
+        run: |
+          cargo run -q -p repo-intelligence-cli -- analyze . --format json > report.json
+          python3 -m json.tool report.json > /dev/null
+          python3 -c "
+          import json
+          r = json.load(open('report.json'))
+          ws = [f for f in r['findings'] if f['kind'] == 'cargo-workspace' and f['path'] == 'Cargo.toml']
+          assert ws and 'crates/core/Cargo.toml' in ws[0]['data']['members'], 'workspace members missing'
+          assert r['schema_version'] == '0.1.0'
+          "

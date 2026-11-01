@@ -9,3 +9,10 @@ repository.workspace = true
 [dependencies]
 repo-intelligence-core = { path = "../core" }
 repo-intelligence-json = { path = "../json" }
+toml = { workspace = true }
+semver = { workspace = true }
+globset = { workspace = true }
+serde_json = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

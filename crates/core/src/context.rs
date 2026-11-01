@@ -25,10 +25,13 @@ use std::io;
 use std::path::{Component, Path, PathBuf};
 use std::sync::OnceLock;
 
+use std::ffi::OsStr;
+
 use ignore::WalkBuilder;
 use repo_intelligence_json::{Diagnostic, Severity};
 
 use crate::error::EngineError;
+use crate::git::{self, GitTag};
 
 /// Stable detector id used for diagnostics produced by the traversal itself.
 pub(crate) const SCANNER_ID: &str = "scanner";
@@ -41,11 +44,14 @@ pub struct RepoContext {
     /// Keyed by repo-relative, forward-slash path; `BTreeMap` gives the byte-wise order.
     files: BTreeMap<String, OnceLock<Vec<u8>>>,
     diagnostics: Vec<Diagnostic>,
+    /// `None` when the root is not a readable git repository.
+    git_tags: Option<Vec<GitTag>>,
 }
 
 impl RepoContext {
     /// Builds a context from an explicit path list, with no traversal diagnostics.
     /// Paths are sorted and de-duplicated. Intended for tests and synthetic inputs.
+    #[doc(hidden)]
     pub fn from_paths<I, S>(root: impl Into<PathBuf>, paths: I) -> RepoContext
     where
         I: IntoIterator<Item = S>,
@@ -58,7 +64,20 @@ impl RepoContext {
                 .map(|p| (p.into(), OnceLock::new()))
                 .collect(),
             diagnostics: Vec::new(),
+            git_tags: None,
         }
+    }
+
+    /// Returns this context with git tags set. Intended for tests and synthetic inputs.
+    #[doc(hidden)]
+    pub fn with_git_tags(mut self, tags: Vec<GitTag>) -> Self {
+        self.git_tags = Some(tags);
+        self
+    }
+
+    /// Tags in byte-wise name order, or `None` if the root is not a readable repository.
+    pub fn git_tags(&self) -> Option<&[GitTag]> {
+        self.git_tags.as_deref()
     }
 
     /// The repository root path this context was built from.
@@ -69,6 +88,11 @@ impl RepoContext {
     /// Repo-relative, forward-slash file paths in byte-wise sorted order.
     pub fn paths(&self) -> impl Iterator<Item = &str> {
         self.files.keys().map(String::as_str)
+    }
+
+    /// True if `path` is in the listing. Exact match on the normalized form.
+    pub fn contains(&self, path: &str) -> bool {
+        self.files.contains_key(path)
     }
 
     /// Diagnostics produced by the traversal (unreadable, symlinked, non-UTF-8 entries).
@@ -99,6 +123,11 @@ impl RepoContext {
 /// Fails only when the root itself is unusable. Every problem below the root
 /// becomes a diagnostic on the returned context.
 pub fn scan(root: &Path) -> Result<RepoContext, EngineError> {
+    scan_with_git(root, OsStr::new("git"))
+}
+
+/// `scan`, with the `git` executable given explicitly (tests simulate a missing binary).
+pub(crate) fn scan_with_git(root: &Path, git_exe: &OsStr) -> Result<RepoContext, EngineError> {
     let meta = std::fs::metadata(root).map_err(|e| match e.kind() {
         io::ErrorKind::NotFound => EngineError::RootNotFound(root.to_path_buf()),
         _ => EngineError::RootUnreadable(root.to_path_buf(), e),
@@ -159,10 +188,14 @@ pub fn scan(root: &Path) -> Result<RepoContext, EngineError> {
         }
     }
 
+    let git = git::collect(root, git_exe);
+    diagnostics.extend(git.diagnostics);
+
     Ok(RepoContext {
         root: root.to_path_buf(),
         files: paths.into_iter().map(|p| (p, OnceLock::new())).collect(),
         diagnostics,
+        git_tags: git.tags,
     })
 }
 
@@ -213,7 +246,7 @@ fn error_message(err: &ignore::Error) -> &'static str {
     }
 }
 
-fn warning(path: Option<String>, message: String) -> Diagnostic {
+pub(crate) fn warning(path: Option<String>, message: String) -> Diagnostic {
     Diagnostic {
         severity: Severity::Warning,
         message,

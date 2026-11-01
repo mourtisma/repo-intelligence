@@ -1,6 +1,6 @@
 # Phase 3 — Implementation Plan
 
-> Status: Ready to implement. Scope is defined by `roadmap.md` Phase 3,
+> Status: Implemented (see §13 for results and deviations). Scope is defined by `roadmap.md` Phase 3,
 > `architecture.md` §4–9, `detector-architecture.md`, and `workspace-layout.md`
 > §2–6. This plan is written against the **actual** Phase 0–2 code, not the
 > earlier plans; where they differ, the code wins and the difference is called out.
@@ -301,8 +301,17 @@ keeps detectors pure and unit-testable with synthetic contexts. It also keeps th
 
 `<root>/.git` exists, as a directory or as a file (a gitfile from a worktree or
 submodule). There is no upward search: scanning a subdirectory of a repository
-yields no git data. This matches Phase 2's `parents(false)` policy. To prevent
-git's own upward discovery, `GIT_CEILING_DIRECTORIES` is set to the root's parent.
+yields no git data. This matches Phase 2's `parents(false)` policy.
+
+To prevent git's own upward discovery, git runs against the **canonical** root,
+and `GIT_CEILING_DIRECTORIES` is set to the canonical parent. Git ignores
+relative and symlinked ceiling entries. Before this was fixed (Phase 3 review,
+F1), a relative root with a broken `.git` inside another repository reported
+that outer repository's tags. A regression test covers it.
+
+Each `git` call is bounded by a 30-second timeout. A timeout produces the warning
+`"git timed out; tags not collected"`. This is the one case where output can
+depend on machine speed.
 
 ### How tags are enumerated
 
@@ -846,19 +855,19 @@ Plan one commit per task.
 
 Phase 3 is complete when **all** of the following hold:
 
-- [ ] **Single crate:** `repo-intelligence analyze fixtures/rust-single-crate --format json`
+- [x] **Single crate:** `repo-intelligence analyze fixtures/rust-single-crate --format json`
       exits 0 and matches `expected.json`. The report contains one
       `cargo-package` and one `cargo-toml` (`0.1.0`, `package.version`, High).
-- [ ] **Workspace:** `analyze fixtures/rust-workspace --format json` exits 0 and
+- [x] **Workspace:** `analyze fixtures/rust-workspace --format json` exits 0 and
       matches `expected.json`. The report shows:
       - the workspace members;
       - the inherited `2.1.0` with `inherited_from`;
       - `beta`'s literal `0.3.0`;
       - `skip` and `helper` as non-members.
-- [ ] **Git:** the git-overlay goldens match. Lightweight and annotated tags are
+- [x] **Git:** the git-overlay goldens match. Lightweight and annotated tags are
       distinguished, commit ids are correct, `alpha-v2.1.0` has
       `prefix: "alpha"` and Medium confidence, and `nightly` is absent.
-- [ ] **Messy:** `analyze fixtures/messy --format json` exits 0 and matches
+- [x] **Messy:** `analyze fixtures/messy --format json` exits 0 and matches
       `expected.json`. Diagnostics are reported for:
       - invalid TOML (with line and column);
       - a non-UTF-8 manifest;
@@ -866,29 +875,141 @@ Phase 3 is complete when **all** of the following hold:
       - unresolvable inheritance;
       - a missing name;
       - an unmatched member pattern.
-- [ ] **Self-analysis:** on this repository, the report shows the four
+- [x] **Self-analysis:** on this repository, the report shows the four
       `crates/*` packages as members inheriting `0.0.0` (Task 3.10), and it runs
       in CI.
-- [ ] **Schema:** every report deserializes as `json::Report`. `SCHEMA_VERSION`
+- [x] **Schema:** every report deserializes as `json::Report`. `SCHEMA_VERSION`
       is `0.1.0`, and `schema/report.schema.json` and the `json` crate are
       unchanged.
-- [ ] **Determinism:** reports are byte-identical across two runs and across two
+- [x] **Determinism:** reports are byte-identical across two runs and across two
       tempdir locations (except `analyzed_at`), including the git path.
-- [ ] **Isolation:** no test reads the developer's repository or global/system
+- [x] **Isolation:** no test reads the developer's repository or global/system
       git config; the hostile-`~/.gitconfig` test passes.
-- [ ] **Exit codes:** match `architecture.md` §6 in the CLI tests, including
+- [x] **Exit codes:** match `architecture.md` §6 in the CLI tests, including
       unknown flag → 1 and nonexistent path → 1.
-- [ ] **Boundaries:**
+- [x] **Boundaries:**
       - `core` names no detector;
       - detectors read only through `RepoContext`;
       - `std::process` appears only in `core/src/git.rs` (guard green);
       - `detectors` exports only `default_registry()`.
-- [ ] **Phase 2 carry-over:** N1–N3 are closed (Task 3.0).
-- [ ] **CI:** `fmt --check`, `clippy -D warnings`, `build`, `test`, the
+- [x] **Phase 2 carry-over:** N1–N3 are closed (Task 3.0).
+- [x] **CI:** `fmt --check`, `clippy -D warnings`, `build`, `test`, the
       dependency/process guard, and the self-analysis step are all green.
-- [ ] **Deviations recorded:**
+- [x] **Deviations recorded:**
       - two Cargo detectors;
       - git subprocess in `core`;
       - no `tracing`;
       - no feature flags;
       - `sources: []` for tags.
+
+## 13. Implementation Results and Deviations
+
+**Verified (`cargo fmt --check`, `clippy -D warnings`, `build`, `test --workspace`,
+`check-engine-deps.sh` all green):**
+
+- Task 3.0: `DetectionOutput` is `#[non_exhaustive]` with `new()`. Duplicate ids
+  panic. Findings with non-repo-relative `path` or `sources` are rejected with a
+  diagnostic. `RepoContext::contains` added.
+- Task 3.1: git tags collected in `core` through a hardened `git` invocation
+  (`crates/core/src/git.rs`). Tests cover lightweight and annotated tags, tags
+  naming a tree, shallow clones, subdirectories, identical ids across locations,
+  a missing binary, a corrupt `.git`, a hostile `HOME/.gitconfig`, and the
+  environment allowlist.
+- Tasks 3.2–3.6: detectors `cargo`, `cargo-version`, `git-tags`, and
+  `default_registry()`. Parser and membership logic are in `cargo/manifest.rs`.
+- Task 3.7: fixtures `rust-single-crate`, `rust-workspace`, `messy`. Detector
+  integration tests check exact findings and diagnostics per fixture.
+- Task 3.8: `analyze <PATH> [--format json]` with exit codes 0/1/2. Tests in
+  `crates/cli/tests/cli.rs`.
+- Task 3.9: goldens `expected.json` (3 fixtures) and `expected.git.json` (2
+  fixtures with a fixed history). Regeneration is stable: running it twice gives
+  identical files. Only `tool_version` and `analyzed_at` are normalized.
+- Task 3.10: self-analysis on this repository lists `crates/{cli,core,detectors,json}`
+  as members of the root workspace, each inheriting `0.0.0`.
+- Task 3.11: the CI workflow checks out with `fetch-depth: 0` and runs the
+  self-analysis step. `check-engine-deps.sh` rejects `std::process` outside
+  `crates/core/src/git.rs`. Checked by planting a `Command` in a detector: the
+  guard reported FAIL.
+- Schema: `schema/report.schema.json` and `crates/json` are unchanged.
+
+**Deviations from the plan:**
+
+1. `fixtures/` contains only the three committed inputs, plus `nested` from
+   Phase 2. The git-overlay repositories are built in tempdirs at test time, since
+   git cannot commit a nested `.git`.
+2. Golden git history skips `expected*` files when copying a fixture. Otherwise
+   the golden file would be part of the tree it describes, and regenerating
+   would change every commit id. Found by the first regeneration run.
+3. Goldens normalize `tool_version` as well as `analyzed_at`, so a version bump
+   does not require regenerating goldens. The separate test
+   `runtime_values_are_injected` checks the real value.
+4. Added diagnostic `package.workspace does not name a workspace root`. The plan
+   did not list it, but it is the only way to report a bad explicit override.
+5. Plan row "a `members` glob matches a directory with no `Cargo.toml`": not
+   implemented as its own diagnostic. A pattern that matches no manifest directory
+   gets one warning (`... matches no Cargo.toml: <pattern>`), which covers the
+   practical case.
+6. `package.workspace` override resolution treats a target outside the repository
+   as "not a workspace root" (same diagnostic).
+7. The panic hook is not replaced. The default message reaches stderr, followed
+   by our `internal error` line. stdout stays clean either way.
+8. `exclude = ["fixtures"]` is in the root `[workspace]` as planned. Cargo
+   itself does not require it for these fixtures, so it documents intent.
+9. Added a 30-second timeout per `git` call (§5), with the warning
+   `"git timed out; tags not collected"`.
+10. An invalid `workspace.package.version` is warned about once, at the root
+    that declares it. Inheriting members get a Low-confidence finding without
+    repeating the warning.
+
+**Phase 3 review fixes (F1–F9):**
+
+- **F1:** git runs on the canonical root, with a canonical ceiling. Regression
+  test `broken_dot_git_under_relative_root_does_not_leak_parent_tags`. It was
+  confirmed to fail without the fix (it reported the parent's tags).
+- **F2:** Cargo semantics pinned in `crates/detectors/tests/cargo_edge_cases.rs`:
+  - a root package that is also a workspace;
+  - nested workspaces;
+  - valid and invalid `package.workspace` overrides;
+  - wrong-type and invalid inherited versions;
+  - a workspace below the repo root with explicit members and `exclude`;
+  - globs not crossing directories.
+- **F3:** see deviation 10.
+- **F4:** git-dependent tests skip with a note when `git` is missing
+  (`regenerate_golden` instead fails, since it cannot produce correct output).
+  Test helpers use the platform null device.
+- **F5:** detector diagnostics with non-repo-relative paths are now replaced by
+  an `error` diagnostic with no path, so N2 is fully closed (test
+  `detector_diagnostics_with_non_repo_relative_paths_are_replaced`). §5 is
+  corrected for F1.
+- **F6:**
+  - Timeout added (deviation 9; unit test `slow_git_times_out_with_a_warning`).
+  - The review's Windows concern was wrong: since Rust 1.58, `Command::new` does
+    not search the current directory on Windows, so a planted `git.exe` there
+    is not run. No change was needed.
+- **F7:** accepted risk. The `messy` golden pins the `toml` crate's error
+  position, and the golden test's doc says a moved position after a `toml`
+  upgrade is an expected, reviewable diff.
+- **F8:** `RepoContext::from_paths` and `with_git_tags` are `#[doc(hidden)]`. The
+  eight-argument helper is replaced by a `VersionSource` struct, and the
+  `clippy` allow is gone.
+- **F9:** decision deferred to Phase 4, recorded here. The self-analysis report
+  includes the `messy` fixture's `error` diagnostics, which is truthful. The
+  Phase 4 Skill must decide which paths it reasons about (e.g. ignore
+  `fixtures/`). If that needs engine support, it is an additive scoping option,
+  not a change to Phase 3 output.
+
+**Not verified (gaps, not claimed as tested):**
+
+- `catch_unwind` at the CLI boundary: no test panics a detector to exercise it.
+- `git` failure messages for "dubious ownership" and "unrecognized output line":
+  the code paths exist but have no test.
+- `git` config files in the repository itself (`.git/config`): git reads these,
+  as the plan states. Not tested.
+- Windows and macOS: CI is Ubuntu-only. Canonical paths (`\\?\` stripping),
+  `SystemRoot`, and the null device are untested there.
+- The remote CI run has not been executed. Only the commands were run locally.
+- Commits: none. The plan says one commit per task; nothing was committed.
+
+**Checklist:** every §12 item is ticked, except that the CI bullet is verified
+only locally (see above).
+

@@ -22,9 +22,11 @@
 mod context;
 mod detector;
 mod error;
+mod git;
 mod pipeline;
 
 pub use context::{scan, RepoContext};
 pub use detector::{DetectionOutput, Detector, DetectorCategory, DetectorRegistry};
 pub use error::EngineError;
+pub use git::GitTag;
 pub use pipeline::run;

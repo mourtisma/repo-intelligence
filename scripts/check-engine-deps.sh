@@ -38,8 +38,16 @@ for crate in "${!ALLOWED_INTERNAL[@]}"; do
   done <<< "$tree"
 done
 
+# Process spawning is confined to one module (architecture.md §5; Phase 3 §5).
+echo "== checking std::process use =="
+if grep -rn "std::process" crates/json/src crates/core/src crates/detectors/src \
+  | grep -v "^crates/core/src/git.rs:"; then
+  echo "FAIL: std::process used outside crates/core/src/git.rs"
+  status=1
+fi
+
 if [ "$status" -eq 0 ]; then
-  echo "OK: engine crates (json, core, detectors) have no network deps and only allowed internal edges"
+  echo "OK: engine crates (json, core, detectors) have no network deps, only allowed internal edges, and process spawning only in core/src/git.rs"
 fi
 
 exit "$status"

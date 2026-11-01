@@ -21,9 +21,11 @@
 //! # Detector identity
 //!
 //! A finding is kept only if its `provenance.detector` equals the emitting
-//! detector's `id()` and its `category` equals the detector's `category()`.
-//! Otherwise it is dropped and replaced by an `error` diagnostic. A detector's
-//! diagnostics are always attributed to its `id()`.
+//! detector's `id()`, its `category` equals the detector's `category()`, and its
+//! `path` and `sources` are repo-relative. Otherwise it is dropped and replaced by
+//! an `error` diagnostic. A detector's diagnostics are always attributed to its
+//! `id()`; one with a non-repo-relative `path` is replaced by an `error`
+//! diagnostic with no path.
 //!
 //! # Panics
 //!
@@ -57,24 +59,35 @@ pub fn run(ctx: &RepoContext, registry: &DetectorRegistry) -> Report {
         let output = detector.detect(ctx);
         let (id, category) = (detector.id(), detector.category());
         for finding in output.findings {
-            if finding.provenance.detector == id && finding.category == category {
-                findings.push(finding);
-            } else {
-                diagnostics.push(Diagnostic {
+            match rejection_reason(&finding, id, category) {
+                None => findings.push(finding),
+                Some(reason) => diagnostics.push(Diagnostic {
                     severity: Severity::Error,
-                    message: format!(
-                        "finding rejected: kind `{}` does not match detector id/category",
-                        finding.kind
-                    ),
+                    message: format!("finding rejected: kind `{}` {reason}", finding.kind),
                     detector: id.to_string(),
-                    path: finding.path,
-                });
+                    // Only keep the path if it is itself valid, so the diagnostic conforms.
+                    path: finding.path.filter(|p| is_repo_relative(p)),
+                }),
             }
         }
-        diagnostics.extend(output.diagnostics.into_iter().map(|mut d| {
-            d.detector = id.to_string();
-            d
-        }));
+        for mut diagnostic in output.diagnostics {
+            diagnostic.detector = id.to_string();
+            if diagnostic
+                .path
+                .as_deref()
+                .is_some_and(|p| !is_repo_relative(p))
+            {
+                // Same rule as findings: never let a detector put an absolute or
+                // malformed path into the report.
+                diagnostic = Diagnostic {
+                    severity: Severity::Error,
+                    message: "diagnostic rejected: path is not repo-relative".to_string(),
+                    detector: id.to_string(),
+                    path: None,
+                };
+            }
+            diagnostics.push(diagnostic);
+        }
     }
 
     let (mut findings, mut diagnostics) = synthesize(findings, diagnostics);
@@ -97,6 +110,43 @@ fn synthesize(
     diagnostics: Vec<Diagnostic>,
 ) -> (Vec<Finding>, Vec<Diagnostic>) {
     (findings, diagnostics)
+}
+
+/// Why a detector's finding must be dropped, if it must.
+fn rejection_reason(
+    finding: &Finding,
+    id: &str,
+    category: DetectorCategory,
+) -> Option<&'static str> {
+    if finding.provenance.detector != id || finding.category != category {
+        return Some("does not match detector id/category");
+    }
+    let paths_ok = finding.path.as_deref().is_none_or(is_repo_relative)
+        && finding
+            .provenance
+            .sources
+            .iter()
+            .all(|s| is_repo_relative(s));
+    if !paths_ok {
+        return Some("has a path that is not repo-relative");
+    }
+    None
+}
+
+/// A repo-relative, forward-slash path: non-empty, not rooted, no drive prefix,
+/// and no empty, `.`, or `..` component. Checked per `/`-separated component.
+/// A `\` or `..` inside a component (e.g. `a..b.txt`) is allowed.
+pub(crate) fn is_repo_relative(path: &str) -> bool {
+    if path.is_empty() || path.starts_with('/') || path.starts_with('\\') {
+        return false;
+    }
+    let first = path.split('/').next().unwrap_or("");
+    let bytes = first.as_bytes();
+    if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
+        return false;
+    }
+    path.split('/')
+        .all(|c| !c.is_empty() && c != "." && c != "..")
 }
 
 fn compare_findings(a: &Finding, b: &Finding) -> Ordering {

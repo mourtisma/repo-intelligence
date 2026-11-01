@@ -8,16 +8,37 @@ use crate::context::RepoContext;
 pub use repo_intelligence_json::DetectorCategory;
 
 /// What a detector returns from `detect()`: findings plus diagnostics.
+///
+/// `#[non_exhaustive]`: build it with [`DetectionOutput::new`], so adding a
+/// field later does not break detectors.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[non_exhaustive]
 pub struct DetectionOutput {
     pub findings: Vec<Finding>,
     pub diagnostics: Vec<Diagnostic>,
+}
+
+impl DetectionOutput {
+    pub fn new(findings: Vec<Finding>, diagnostics: Vec<Diagnostic>) -> Self {
+        Self {
+            findings,
+            diagnostics,
+        }
+    }
 }
 
 /// A detector: a pure function of an immutable `RepoContext`.
 ///
 /// Detectors must not walk the filesystem (use `ctx.paths()` / `ctx.read()`),
 /// must not call other detectors, and must not depend on call order.
+///
+/// Output rules (enforced by `run`, which drops non-conforming findings):
+/// - `provenance.detector` and `category` must equal `id()` and `category()`.
+/// - `path` and every `provenance.sources` entry must be repo-relative:
+///   no leading `/` or `\`, no drive prefix, and no empty, `.`, or `..`
+///   component. `path: None` and empty `sources` are allowed.
+/// - Messages and paths must not contain absolute paths or OS error text,
+///   so reports stay identical across machines.
 pub trait Detector: Send + Sync {
     /// Stable identifier, recorded in provenance and diagnostics.
     fn id(&self) -> &'static str;
@@ -42,7 +63,14 @@ impl DetectorRegistry {
     }
 
     /// Appends `detector` after all previously registered detectors.
+    /// Panics if a detector with the same `id()` is already registered.
+    /// Duplicate ids make provenance ambiguous, so this is a programmer error.
     pub fn register<D: Detector + 'static>(&mut self, detector: D) {
+        let id = detector.id();
+        assert!(
+            !self.iter().any(|d| d.id() == id),
+            "duplicate detector id: {id}"
+        );
         self.detectors.push(Box::new(detector));
     }
 
@@ -80,6 +108,14 @@ mod tests {
         reg.register(Named("a", true));
         let ids: Vec<&str> = reg.iter().map(|d| d.id()).collect();
         assert_eq!(ids, vec!["b", "a"]);
+    }
+
+    #[test]
+    #[should_panic(expected = "duplicate detector id: a")]
+    fn duplicate_id_panics() {
+        let mut reg = DetectorRegistry::new();
+        reg.register(Named("a", true));
+        reg.register(Named("a", false));
     }
 
     #[test]
