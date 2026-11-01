@@ -8,3 +8,8 @@ repository.workspace = true
 
 [dependencies]
 repo-intelligence-json = { path = "../json" }
+serde_json = { workspace = true }
+ignore = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

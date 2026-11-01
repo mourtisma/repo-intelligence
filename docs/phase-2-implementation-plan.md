@@ -655,3 +655,53 @@ pipeline's central promise before any detector can muddy it) and the
 Phase 1 contract end-to-end). The rest is structure that makes Phase 3's first
 detector a drop-in.
 ```
+
+## 12. Implementation Notes and Deviations
+
+Recorded after implementation and the Phase 2 review.
+
+**Pinned policies** (documented in `crates/core/src/context.rs` and `pipeline.rs`):
+
+- **Traversal crate:** `ignore` (not `walkdir`), for `.gitignore` semantics.
+- **Hidden entries are listed.** Only entries named `.git` are excluded. The
+  plan allowed skipping hidden files, but that would hide `.github/workflows`,
+  `.gitlab-ci.yml`, `.releaserc`, etc. from the Phase 5 CI and release-tooling
+  detectors.
+- **Ignore files:** `.gitignore` files inside the root and `.git/info/exclude`
+  are honored, even without a `.git` directory. `.ignore` files (ripgrep), parent
+  directories' ignore files, and the global gitignore are not read.
+- **Symlinks** are not followed. Each one is skipped with a `warning` diagnostic.
+  Symlinked directories are therefore not scanned.
+- **Non-UTF-8 paths** are skipped with a `warning` diagnostic (`path: null`; the
+  message carries the lossy relative path).
+- **Diagnostic text is machine-independent.** Messages are fixed phrases and
+  paths are repo-relative. The engine never formats OS error text or absolute
+  paths into a report.
+- **Result order:** documented in `pipeline.rs` (path with `None` last, category,
+  kind, detector, confidence, sources, data JSON). It is a total order.
+- **Detector identity is enforced.** Findings whose `provenance.detector` or
+  `category` do not match the emitting detector are dropped and replaced by an
+  `error` diagnostic. Detector diagnostics are attributed to the detector's `id()`.
+
+**Deviations from the plan:**
+
+- `serde_json` is a `core` dependency. It is used only for the data tiebreak in
+  the result order.
+- The workspace uses `resolver = "3"` (MSRV-aware). Current `ignore`/`globset`
+  releases require Rust 1.88; resolver 3 keeps `cargo update` on releases that
+  build with the pinned 1.85 toolchain.
+- `fixtures/` holds only `nested/`. The ignore and empty-directory cases are built
+  in temp directories by the tests, because git cannot commit files ignored by a
+  fixture's own `.gitignore`, nor an empty directory.
+- Cross-machine identity is tested by scanning the same tree at two different
+  absolute locations and comparing bytes, diagnostics included.
+
+**Guard validation (Task 2.9):** replacing the final sort with a `HashSet`
+round-trip made the order-independence tests fail (3 of 3 runs). Formatting the
+raw traversal error into a diagnostic made the cross-directory test fail.
+
+**Deferred:**
+
+- Panic isolation for detectors.
+- A size cap on `RepoContext::read`.
+- A lower severity for symlink diagnostics. The schema has no `info` level yet.

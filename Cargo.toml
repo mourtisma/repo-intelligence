@@ -1,5 +1,7 @@
 [workspace]
-resolver = "2"
+# Resolver 3 is MSRV-aware: `cargo update` picks versions compatible with
+# `rust-version` (e.g. keeps `ignore`/`globset` on releases that build with 1.85).
+resolver = "3"
 members = ["crates/*"]
 
 # Shared metadata, inherited by every crate via `<field>.workspace = true`.
@@ -19,3 +21,5 @@ serde = { version = "1", features = ["derive"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 schemars = { version = "0.8", features = ["preserve_order"] }
 clap = { version = "4", features = ["derive"] }
+ignore = "0.4.23"
+tempfile = "3"
