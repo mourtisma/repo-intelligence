@@ -12,9 +12,10 @@ jobs:
         with:
           fetch-depth: 0 # full history and tags, so the git-tag path runs in CI
 
+      # Keep in sync with rust-toolchain.toml (the action does not read that file).
       - uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: "" # honor rust-toolchain.toml
+          toolchain: "1.85.0"
           components: rustfmt, clippy
 
       - uses: Swatinem/rust-cache@v2
