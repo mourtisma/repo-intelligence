@@ -168,9 +168,25 @@ categories, not ecosystems).
 - Broaden the messy/adversarial fixture corpus.
 - Publish `repo-intelligence-json` (and possibly the CLI) so external consumers
   can deserialize reports.
+- **Release automation from conventional commits:** merges into `dev` produce
+  release candidates (`vX.Y.Z-rc.N`); merging `dev` into `main` produces the
+  final `vX.Y.Z` from the same commits. The bump is computed from commits since
+  the last final release: `feat` → minor, breaking (`!`, `BREAKING CHANGE:`, or
+  `break:`) → major, everything else → patch. CI writes the version into
+  `[workspace.package]` (so `tool_version` matches the tag) and creates the tag
+  and GitHub release. Candidate tool: `semantic-release` (native prerelease
+  branches); alternative: `git-cliff` plus a small workflow. Prerequisites: a
+  manual baseline tag, since earlier commits are not conventional, and a
+  conventional-title check on PRs. Open decisions:
+  - during `0.x`, does a breaking change bump to `1.0.0`, or to the next minor
+    (the usual pre-1.0 Cargo convention)?
+  - should commits with no code change (`docs:`, `chore:`, `ci:`) create release
+    candidates?
 
 **Exit criteria:** a deliberately breaking schema PR is caught by CI; perf is
-acceptable on a large real monorepo; the contract crate is publishable.
+acceptable on a large real monorepo; the contract crate is publishable; a merge
+into `dev` produces a correctly bumped release candidate, and merging `dev` into
+`main` produces the matching final release.
 
 ---
 
