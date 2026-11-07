@@ -18,7 +18,7 @@ Requirements:
 
 ```sh
 cargo install --locked --git https://github.com/mourtisma/repo-intelligence \
-  --tag v0.1.0-rc.1 repo-intelligence-cli
+  --tag v0.1.0 repo-intelligence-cli
 ```
 
 Replace the tag with the latest release tag. This installs the `repo-intelligence` binary.
