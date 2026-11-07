@@ -1,0 +1,30 @@
+[workspace]
+# Resolver 3 is MSRV-aware: `cargo update` picks versions compatible with
+# `rust-version` (e.g. keeps `ignore`/`globset` on releases that build with 1.85).
+resolver = "3"
+members = ["crates/*"]
+# Fixture packages are inputs, not members of this workspace.
+exclude = ["fixtures"]
+
+# Shared metadata, inherited by every crate via `<field>.workspace = true`.
+# Single source of truth per workspace-layout.md §4.
+[workspace.package]
+version = "0.0.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.85"
+repository = "https://github.com/ismailmo/repo-intelligence"
+
+# Shared external dependency versions, pinned once here. Declared centrally to
+# document intent and avoid version drift; crates do NOT consume these until the
+# phase that needs them (phase-0-implementation-plan.md §7).
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+schemars = { version = "0.8", features = ["preserve_order"] }
+clap = { version = "4", features = ["derive"] }
+ignore = "0.4.23"
+tempfile = "3"
+toml = "0.8"
+semver = "1"
+globset = "0.4"

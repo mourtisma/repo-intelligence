@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.1.0",
+  "tool_version": "<tool_version>",
+  "analyzed_at": "<analyzed_at>",
+  "findings": [
+    {
+      "category": "ecosystem",
+      "kind": "cargo-package",
+      "path": "Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "single",
+        "workspace": null
+      },
+      "provenance": {
+        "detector": "cargo",
+        "sources": [
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "cargo-toml",
+      "path": "Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "single",
+        "version": "0.1.0",
+        "field": "package.version",
+        "inherited_from": null
+      },
+      "provenance": {
+        "detector": "cargo-version",
+        "sources": [
+          "Cargo.toml"
+        ]
+      }
+    }
+  ],
+  "diagnostics": []
+}

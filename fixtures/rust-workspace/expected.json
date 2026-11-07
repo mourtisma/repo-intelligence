@@ -1,0 +1,189 @@
+{
+  "schema_version": "0.1.0",
+  "tool_version": "<tool_version>",
+  "analyzed_at": "<analyzed_at>",
+  "findings": [
+    {
+      "category": "ecosystem",
+      "kind": "cargo-workspace",
+      "path": "Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "members": [
+          "crates/alpha/Cargo.toml",
+          "crates/beta/Cargo.toml"
+        ],
+        "member_patterns": [
+          "crates/*"
+        ],
+        "exclude": [
+          "crates/skip"
+        ]
+      },
+      "provenance": {
+        "detector": "cargo",
+        "sources": [
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "cargo-toml",
+      "path": "Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": null,
+        "version": "2.1.0",
+        "field": "workspace.package.version",
+        "inherited_from": null
+      },
+      "provenance": {
+        "detector": "cargo-version",
+        "sources": [
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "ecosystem",
+      "kind": "cargo-package",
+      "path": "crates/alpha/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "alpha",
+        "workspace": "Cargo.toml"
+      },
+      "provenance": {
+        "detector": "cargo",
+        "sources": [
+          "crates/alpha/Cargo.toml",
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "cargo-toml",
+      "path": "crates/alpha/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "alpha",
+        "version": "2.1.0",
+        "field": "workspace.package.version",
+        "inherited_from": "Cargo.toml"
+      },
+      "provenance": {
+        "detector": "cargo-version",
+        "sources": [
+          "crates/alpha/Cargo.toml",
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "ecosystem",
+      "kind": "cargo-package",
+      "path": "crates/beta/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "beta",
+        "workspace": "Cargo.toml"
+      },
+      "provenance": {
+        "detector": "cargo",
+        "sources": [
+          "crates/beta/Cargo.toml",
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "cargo-toml",
+      "path": "crates/beta/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "beta",
+        "version": "0.3.0",
+        "field": "package.version",
+        "inherited_from": null
+      },
+      "provenance": {
+        "detector": "cargo-version",
+        "sources": [
+          "crates/beta/Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "ecosystem",
+      "kind": "cargo-package",
+      "path": "crates/skip/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "skip",
+        "workspace": null
+      },
+      "provenance": {
+        "detector": "cargo",
+        "sources": [
+          "crates/skip/Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "cargo-toml",
+      "path": "crates/skip/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "skip",
+        "version": "9.9.9",
+        "field": "package.version",
+        "inherited_from": null
+      },
+      "provenance": {
+        "detector": "cargo-version",
+        "sources": [
+          "crates/skip/Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "ecosystem",
+      "kind": "cargo-package",
+      "path": "tools/helper/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "helper",
+        "workspace": null
+      },
+      "provenance": {
+        "detector": "cargo",
+        "sources": [
+          "tools/helper/Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "cargo-toml",
+      "path": "tools/helper/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "helper",
+        "version": "0.0.1",
+        "field": "package.version",
+        "inherited_from": null
+      },
+      "provenance": {
+        "detector": "cargo-version",
+        "sources": [
+          "tools/helper/Cargo.toml"
+        ]
+      }
+    }
+  ],
+  "diagnostics": []
+}

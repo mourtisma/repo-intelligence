@@ -1,0 +1,175 @@
+{
+  "schema_version": "0.1.0",
+  "tool_version": "<tool_version>",
+  "analyzed_at": "<analyzed_at>",
+  "findings": [
+    {
+      "category": "ecosystem",
+      "kind": "cargo-workspace",
+      "path": "Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "members": [
+          "crates/badver/Cargo.toml",
+          "crates/noname/Cargo.toml",
+          "crates/orphan/Cargo.toml"
+        ],
+        "member_patterns": [
+          "crates/*",
+          "missing/*"
+        ],
+        "exclude": []
+      },
+      "provenance": {
+        "detector": "cargo",
+        "sources": [
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "ecosystem",
+      "kind": "cargo-package",
+      "path": "crates/badver/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "badver",
+        "workspace": "Cargo.toml"
+      },
+      "provenance": {
+        "detector": "cargo",
+        "sources": [
+          "crates/badver/Cargo.toml",
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "cargo-toml",
+      "path": "crates/badver/Cargo.toml",
+      "confidence": "low",
+      "data": {
+        "name": "badver",
+        "version": "1.0",
+        "field": "package.version",
+        "inherited_from": null
+      },
+      "provenance": {
+        "detector": "cargo-version",
+        "sources": [
+          "crates/badver/Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "ecosystem",
+      "kind": "cargo-package",
+      "path": "crates/noname/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": null,
+        "workspace": "Cargo.toml"
+      },
+      "provenance": {
+        "detector": "cargo",
+        "sources": [
+          "crates/noname/Cargo.toml",
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "cargo-toml",
+      "path": "crates/noname/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": null,
+        "version": "0.2.0",
+        "field": "package.version",
+        "inherited_from": null
+      },
+      "provenance": {
+        "detector": "cargo-version",
+        "sources": [
+          "crates/noname/Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "ecosystem",
+      "kind": "cargo-package",
+      "path": "crates/orphan/Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "orphan",
+        "workspace": "Cargo.toml"
+      },
+      "provenance": {
+        "detector": "cargo",
+        "sources": [
+          "crates/orphan/Cargo.toml",
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "cargo-toml",
+      "path": "crates/orphan/Cargo.toml",
+      "confidence": "low",
+      "data": {
+        "name": "orphan",
+        "version": null,
+        "field": "workspace.package.version",
+        "inherited_from": "Cargo.toml"
+      },
+      "provenance": {
+        "detector": "cargo-version",
+        "sources": [
+          "crates/orphan/Cargo.toml",
+          "Cargo.toml"
+        ]
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "message": "workspace member pattern matches no Cargo.toml: missing/*",
+      "detector": "cargo",
+      "path": "Cargo.toml"
+    },
+    {
+      "severity": "warning",
+      "message": "version is not valid semver",
+      "detector": "cargo-version",
+      "path": "crates/badver/Cargo.toml"
+    },
+    {
+      "severity": "error",
+      "message": "manifest is not valid UTF-8",
+      "detector": "cargo",
+      "path": "crates/binary/Cargo.toml"
+    },
+    {
+      "severity": "error",
+      "message": "invalid TOML at line 1, column 9",
+      "detector": "cargo",
+      "path": "crates/broken/Cargo.toml"
+    },
+    {
+      "severity": "warning",
+      "message": "package has no name",
+      "detector": "cargo",
+      "path": "crates/noname/Cargo.toml"
+    },
+    {
+      "severity": "warning",
+      "message": "inherited version cannot be resolved",
+      "detector": "cargo-version",
+      "path": "crates/orphan/Cargo.toml"
+    }
+  ]
+}

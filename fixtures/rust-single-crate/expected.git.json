@@ -1,0 +1,93 @@
+{
+  "schema_version": "0.1.0",
+  "tool_version": "<tool_version>",
+  "analyzed_at": "<analyzed_at>",
+  "findings": [
+    {
+      "category": "ecosystem",
+      "kind": "cargo-package",
+      "path": "Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "single",
+        "workspace": null
+      },
+      "provenance": {
+        "detector": "cargo",
+        "sources": [
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "cargo-toml",
+      "path": "Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "single",
+        "version": "0.1.0",
+        "field": "package.version",
+        "inherited_from": null
+      },
+      "provenance": {
+        "detector": "cargo-version",
+        "sources": [
+          "Cargo.toml"
+        ]
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "git-tag",
+      "path": null,
+      "confidence": "medium",
+      "data": {
+        "name": "alpha-v2.1.0",
+        "version": "2.1.0",
+        "prefix": "alpha",
+        "annotated": true,
+        "commit": "64427d2873f76f777dc909c56ae04dc583e89271"
+      },
+      "provenance": {
+        "detector": "git-tags",
+        "sources": []
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "git-tag",
+      "path": null,
+      "confidence": "high",
+      "data": {
+        "name": "v0.1.0",
+        "version": "0.1.0",
+        "prefix": null,
+        "annotated": false,
+        "commit": "f9258c5cb0c0149ba9ca440f75e36b63fbecb459"
+      },
+      "provenance": {
+        "detector": "git-tags",
+        "sources": []
+      }
+    },
+    {
+      "category": "version-source",
+      "kind": "git-tag",
+      "path": null,
+      "confidence": "high",
+      "data": {
+        "name": "v0.2.0",
+        "version": "0.2.0",
+        "prefix": null,
+        "annotated": true,
+        "commit": "64427d2873f76f777dc909c56ae04dc583e89271"
+      },
+      "provenance": {
+        "detector": "git-tags",
+        "sources": []
+      }
+    }
+  ],
+  "diagnostics": []
+}

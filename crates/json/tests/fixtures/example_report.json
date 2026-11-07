@@ -1,0 +1,55 @@
+{
+  "schema_version": "0.1.0",
+  "tool_version": "0.1.0",
+  "analyzed_at": "2026-07-19T12:00:00Z",
+  "findings": [
+    {
+      "category": "structure",
+      "kind": "git-repository",
+      "path": null,
+      "confidence": "high",
+      "data": {
+        "has_git": true
+      },
+      "provenance": {
+        "detector": "structure-detector",
+        "sources": [".git/HEAD"]
+      }
+    },
+    {
+      "category": "ecosystem",
+      "kind": "cargo-toml",
+      "path": "Cargo.toml",
+      "confidence": "high",
+      "data": {
+        "name": "example-project",
+        "version": "0.1.0"
+      },
+      "provenance": {
+        "detector": "ecosystem-detector",
+        "sources": ["Cargo.toml"]
+      }
+    },
+    {
+      "category": "language",
+      "kind": "rust-detected",
+      "path": "src/main.rs",
+      "confidence": "high",
+      "data": {
+        "file_count": 1
+      },
+      "provenance": {
+        "detector": "language-detector",
+        "sources": ["src/main.rs"]
+      }
+    }
+  ],
+  "diagnostics": [
+    {
+      "severity": "warning",
+      "message": "Could not determine CI/CD configuration",
+      "detector": "ci-detector",
+      "path": null
+    }
+  ]
+}
