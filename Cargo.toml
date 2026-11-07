@@ -13,7 +13,7 @@ version = "0.1.0-rc.1"
 edition = "2021"
 license = "MIT"
 rust-version = "1.85"
-repository = "https://github.com/ismailmo/repo-intelligence"
+repository = "https://github.com/mourtisma/repo-intelligence"
 
 # Shared external dependency versions, pinned once here. Declared centrally to
 # document intent and avoid version drift; crates do NOT consume these until the
