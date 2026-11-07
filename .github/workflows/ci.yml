@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history and tags, so the git-tag path runs in CI
+
+      # Keep in sync with rust-toolchain.toml (the action does not read that file).
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: "1.85.0"
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: fmt
+        run: cargo fmt --all -- --check
+
+      - name: clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: build
+        run: cargo build --workspace
+
+      - name: test
+        run: cargo test --workspace
+
+      - name: dependency-graph guard
+        run: ./scripts/check-engine-deps.sh
+
+      - name: self-analysis
+        run: |
+          cargo run -q -p repo-intelligence-cli -- analyze . --format json > report.json
+          python3 -m json.tool report.json > /dev/null
+          python3 -c "
+          import json
+          r = json.load(open('report.json'))
+          ws = [f for f in r['findings'] if f['kind'] == 'cargo-workspace' and f['path'] == 'Cargo.toml']
+          assert ws and 'crates/core/Cargo.toml' in ws[0]['data']['members'], 'workspace members missing'
+          assert r['schema_version'] == '0.1.0'
+          "
