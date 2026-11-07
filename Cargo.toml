@@ -9,7 +9,7 @@ exclude = ["fixtures"]
 # Shared metadata, inherited by every crate via `<field>.workspace = true`.
 # Single source of truth per workspace-layout.md §4.
 [workspace.package]
-version = "0.1.0-rc.1"
+version = "0.1.0"
 edition = "2021"
 license = "MIT"
 rust-version = "1.85"
